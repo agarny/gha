@@ -103,19 +103,31 @@ jobs:
           ${{ matrix.emmake }} make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
           ${{ matrix.emmake }} make install
           tar -czf ${{ runner.temp }}/gmp-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} gmp
-      - name: Build and archive SymEngine
+      - name: Build and archive SymEngine (Windows)
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          & C:\vcpkg\vcpkg install symengine:x64-windows-release
+          cd C:\vcpkg\installed\x64-windows-release
+          New-Item -Path symengine -ItemType Directory | Out-Null
+          Move-Item -Path bin -Destination symengine
+          Move-Item -Path include -Destination symengine
+          Move-Item -Path lib -Destination symengine
+          Move-Item -Path share -Destination symengine
+          tar -czf $env:RUNNER_TEMP/symengine-${{ matrix.archive_name }}.tar.gz symengine
+      - name: Build and archive SymEngine (Linux/macOS/WASM)
+        if: ${{ runner.os != 'Windows' }}
         run: |
           git clone -b v${{ env.SYMENGINE_VERSION }} --depth 1 https://github.com/symengine/symengine.git
           cd symengine
           ${{ matrix.emcmake }} cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ runner.temp }}/symengine -DBUILD_BENCHMARKS=OFF -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=${{ matrix.build_shared_libs }} ${{ matrix.gmp_args }} -DWITH_SYMENGINE_THREAD_SAFE=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
           cmake --build build
           cmake --install build
-      - name: Patch SymEngine (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        shell: bash
-        run: |
-          sed -i 's|set(SYMENGINE_GMP_LIBRARIES C:/vcpkg/installed/x64-windows-release/gmp/lib/gmp.lib)|set(SYMENGINE_GMP_LIBRARIES ${SYMENGINE_CMAKE_DIR}/../../gmp/lib/gmp.lib)|' $RUNNER_TEMP/symengine/CMake/SymEngineConfig.cmake
-          sed -i 's|set(SYMENGINE_GMP_INCLUDE_DIRS C:/vcpkg/installed/x64-windows-release/gmp/include)|set(SYMENGINE_GMP_INCLUDE_DIRS ${SYMENGINE_CMAKE_DIR}/../../gmp/include)|' $RUNNER_TEMP/symengine/CMake/SymEngineConfig.cmake
+      # - name: Patch SymEngine (Windows)
+      #   if: ${{ runner.os == 'Windows' }}
+      #   shell: bash
+      #   run: |
+      #     sed -i 's|set(SYMENGINE_GMP_LIBRARIES C:/vcpkg/installed/x64-windows-release/gmp/lib/gmp.lib)|set(SYMENGINE_GMP_LIBRARIES ${SYMENGINE_CMAKE_DIR}/../../gmp/lib/gmp.lib)|' $RUNNER_TEMP/symengine/CMake/SymEngineConfig.cmake
+      #     sed -i 's|set(SYMENGINE_GMP_INCLUDE_DIRS C:/vcpkg/installed/x64-windows-release/gmp/include)|set(SYMENGINE_GMP_INCLUDE_DIRS ${SYMENGINE_CMAKE_DIR}/../../gmp/include)|' $RUNNER_TEMP/symengine/CMake/SymEngineConfig.cmake
       - name: Patch SymEngine (Linux)
         if: ${{ runner.os == 'Linux' }}
         run: |
