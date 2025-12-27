@@ -18,29 +18,29 @@ jobs:
             build_shared_libs: 'ON'
             gmp_args: '-DGMP_INCLUDE_DIR=C:\vcpkg\installed\x64-windows-release/gmp/include -DGMP_LIBRARY=C:\vcpkg\installed\x64-windows-release/gmp/lib/gmp.lib'
             archive_name: 'Windows'
-          - name: 'Linux'
-            os: ubuntu-latest
-            build_shared_libs: 'ON'
-            gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
-            archive_name: 'Linux'
-          - name: 'macOS (Intel)'
-            os: macos-15-intel
-            build_shared_libs: 'ON'
-            gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
-            archive_name: 'macOS-Intel'
-          - name: 'macOS (ARM)'
-            os: macos-latest
-            build_shared_libs: 'ON'
-            gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
-            archive_name: 'macOS-ARM'
-          - name: 'WASM'
-            os: macos-latest
-            emconfigure: 'emconfigure'
-            emcmake: 'emcmake'
-            emmake: 'emmake'
-            build_shared_libs: 'OFF'
-            gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
-            archive_name: 'WASM'
+          # - name: 'Linux'
+          #   os: ubuntu-latest
+          #   build_shared_libs: 'ON'
+          #   gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
+          #   archive_name: 'Linux'
+          # - name: 'macOS (Intel)'
+          #   os: macos-15-intel
+          #   build_shared_libs: 'ON'
+          #   gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
+          #   archive_name: 'macOS-Intel'
+          # - name: 'macOS (ARM)'
+          #   os: macos-latest
+          #   build_shared_libs: 'ON'
+          #   gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
+          #   archive_name: 'macOS-ARM'
+          # - name: 'WASM'
+          #   os: macos-latest
+          #   emconfigure: 'emconfigure'
+          #   emcmake: 'emcmake'
+          #   emmake: 'emmake'
+          #   build_shared_libs: 'OFF'
+          #   gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
+          #   archive_name: 'WASM'
     env:
       BUILDCACHE_ACCURACY: STRICT
       BUILDCACHE_COMPRESS_FORMAT: ZSTD
