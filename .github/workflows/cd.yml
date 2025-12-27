@@ -16,7 +16,7 @@ jobs:
           - name: 'Windows'
             os: windows-latest
             build_shared_libs: 'ON'
-            gmp_args: '-DGMP_INCLUDE_DIR=$RUNNER_TEMP/gmp/include -DGMP_LIBRARY=$RUNNER_TEMP/gmp/lib/libgmp.a'
+            gmp_args: '-DGMP_INCLUDE_DIR=C:\vcpkg\installed\x64-windows-release/gmp/include -DGMP_LIBRARY=C:\vcpkg\installed\x64-windows-release/gmp/lib/gmp.lib'
             archive_name: 'Windows'
           - name: 'Linux'
             os: ubuntu-latest
@@ -60,19 +60,6 @@ jobs:
       - name: Configure MSVC (Windows)
         if: ${{ runner.os == 'Windows' }}
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Setup MSYS2 (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          msystem: MINGW64
-          install: >-
-            base-devel
-            git
-            mingw-w64-x86_64-clang
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-make
-            mingw-w64-x86_64-ninja
       - name: Install Emscripten (WASM)
         if: ${{ matrix.name == 'WASM' }}
         run: |
@@ -97,20 +84,15 @@ jobs:
           tar -czf ${{ runner.temp }}/libxml2-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} libxml2
       - name: Build and archive GMP (Windows)
         if: ${{ runner.os == 'Windows' }}
-        shell: msys2 {0}
         run: |
-          gcc --version
-          PREFIX="$(cygpath "$RUNNER_TEMP")/gmp"
-          curl -Lo gmp.tar.xz https://ftp.gnu.org/gnu/gmp/gmp-${{ env.GMP_VERSION }}.tar.xz
-          tar -xf gmp.tar.xz
-          cd gmp-${{ env.GMP_VERSION }}
-          # Avoid MSYS2's global site script which can inject flags that break GMP's tests
-          export CONFIG_SITE=/dev/null
-          # Prefer Clang on MinGW to avoid GCC 15 reliability test issues
-          ABI=64 ./configure --prefix="$PREFIX" --enable-cxx --disable-shared --disable-assembly --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32 CC=clang CXX=clang++ CFLAGS="-O2" CXXFLAGS="-O2"
-          make -j$(nproc 2>/dev/null || echo 4)
-          make install
-          tar -czf "$(cygpath "$RUNNER_TEMP")/gmp-${{ matrix.archive_name }}.tar.gz" -C "$(cygpath "$RUNNER_TEMP")" gmp
+          & C:\vcpkg\vcpkg install gmp:x64-windows-release
+          cd C:\vcpkg\installed\x64-windows-release
+          New-Item -Path gmp -ItemType Directory | Out-Null
+          Move-Item -Path bin -Destination gmp
+          Move-Item -Path include -Destination gmp
+          Move-Item -Path lib -Destination gmp
+          Move-Item -Path share -Destination gmp
+          tar -czf $env:RUNNER_TEMP/gmp-${{ matrix.archive_name }}.tar.gz gmp
       - name: Build and archive GMP (Linux/macOS/WASM)
         if: ${{ runner.os != 'Windows' }}
         run: |
@@ -122,19 +104,18 @@ jobs:
           ${{ matrix.emmake }} make install
           tar -czf ${{ runner.temp }}/gmp-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} gmp
       - name: Build and archive SymEngine
-        shell: msys2 {0}
         run: |
           git clone -b v${{ env.SYMENGINE_VERSION }} --depth 1 https://github.com/symengine/symengine.git
           cd symengine
-          ${{ matrix.emcmake }} cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$RUNNER_TEMP/symengine -DBUILD_BENCHMARKS=OFF -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=${{ matrix.build_shared_libs }} ${{ matrix.gmp_args }} -DWITH_SYMENGINE_THREAD_SAFE=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
+          ${{ matrix.emcmake }} cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ runner.temp }}/symengine -DBUILD_BENCHMARKS=OFF -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=${{ matrix.build_shared_libs }} ${{ matrix.gmp_args }} -DWITH_SYMENGINE_THREAD_SAFE=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
           cmake --build build
           cmake --install build
       - name: Patch SymEngine (Windows)
         if: ${{ runner.os == 'Windows' }}
-        shell: msys2 {0}
+        shell: bash
         run: |
-          sed -i 's|set(SYMENGINE_GMP_LIBRARIES D:/a/_temp/gmp/lib/libgmp.a)|set(SYMENGINE_GMP_LIBRARIES ${SYMENGINE_CMAKE_DIR}/../../gmp/lib/libgmp.a)|' $RUNNER_TEMP/symengine/Cmake/SymEngineConfig.cmake
-          sed -i 's|set(SYMENGINE_GMP_INCLUDE_DIRS D:/a/_temp/gmp/include)|set(SYMENGINE_GMP_INCLUDE_DIRS ${SYMENGINE_CMAKE_DIR}/../../gmp/include)|' $RUNNER_TEMP/symengine/Cmake/SymEngineConfig.cmake
+          sed -i 's|set(SYMENGINE_GMP_LIBRARIES C:/vcpkg/installed/x64-windows-release/gmp/lib/gmp.lib)|set(SYMENGINE_GMP_LIBRARIES ${SYMENGINE_CMAKE_DIR}/../../gmp/lib/gmp.lib)|' $RUNNER_TEMP/symengine/CMake/SymEngineConfig.cmake
+          sed -i 's|set(SYMENGINE_GMP_INCLUDE_DIRS C:/vcpkg/installed/x64-windows-release/gmp/include)|set(SYMENGINE_GMP_INCLUDE_DIRS ${SYMENGINE_CMAKE_DIR}/../../gmp/include)|' $RUNNER_TEMP/symengine/CMake/SymEngineConfig.cmake
       - name: Patch SymEngine (Linux)
         if: ${{ runner.os == 'Linux' }}
         run: |
@@ -146,10 +127,7 @@ jobs:
           sed -i '' 's|set(SYMENGINE_GMP_LIBRARIES /Users/runner/work/_temp/gmp/lib/libgmp.a)|set(SYMENGINE_GMP_LIBRARIES ${SYMENGINE_CMAKE_DIR}/../../../../gmp/lib/libgmp.a)|' ${{ runner.temp }}/symengine/lib/cmake/symengine/SymEngineConfig.cmake
           sed -i '' 's|set(SYMENGINE_GMP_INCLUDE_DIRS /Users/runner/work/_temp/gmp/include)|set(SYMENGINE_GMP_INCLUDE_DIRS ${SYMENGINE_CMAKE_DIR}/../../../../gmp/include)|' ${{ runner.temp }}/symengine/lib/cmake/symengine/SymEngineConfig.cmake
       - name: Archive SymEngine
-        shell: msys2 {0}
-        run: |
-          ls -alR $(cygpath "$RUNNER_TEMP")
-          tar -czf "$(cygpath "$RUNNER_TEMP")/symengine-${{ matrix.archive_name }}.tar.gz" -C "$(cygpath "$RUNNER_TEMP")" symengine
+        run: tar -czf ${{ runner.temp }}/symengine-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} symengine
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
