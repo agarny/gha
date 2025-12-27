@@ -16,7 +16,7 @@ jobs:
           - name: 'Windows'
             os: windows-latest
             build_shared_libs: 'ON'
-            gmp_args: '-DGMP_INCLUDE_DIR=C:\vcpkg\installed\x64-windows-release/gmp/include -DGMP_LIBRARY=C:\vcpkg\installed\x64-windows-release/gmp/lib/gmp.lib'
+            gmp_args: '-DGMP_INCLUDE_DIR=C:\vcpkg\installed\x64-windows/gmp/include -DGMP_LIBRARY=C:\vcpkg\installed\x64-windows/gmp/lib/gmp.lib'
             archive_name: 'Windows'
           # - name: 'Linux'
           #   os: ubuntu-latest
@@ -85,8 +85,8 @@ jobs:
       - name: Build and archive GMP (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          & C:\vcpkg\vcpkg install gmp:x64-windows-release
-          cd C:\vcpkg\installed\x64-windows-release
+          & C:\vcpkg\vcpkg install gmp:x64-windows
+          cd C:\vcpkg\installed\x64-windows
           New-Item -Path gmp -ItemType Directory | Out-Null
           Move-Item -Path bin -Destination gmp
           Move-Item -Path include -Destination gmp
@@ -106,8 +106,8 @@ jobs:
       - name: Build and archive SymEngine (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
-          & C:\vcpkg\vcpkg install symengine:x64-windows-release
-          cd C:\vcpkg\installed\x64-windows-release
+          & C:\vcpkg\vcpkg install symengine:x64-windows
+          cd C:\vcpkg\installed\x64-windows
           New-Item -Path symengine -ItemType Directory | Out-Null
           Move-Item -Path bin -Destination symengine
           Move-Item -Path include -Destination symengine
@@ -138,8 +138,8 @@ jobs:
         run: |
           sed -i '' 's|set(SYMENGINE_GMP_LIBRARIES /Users/runner/work/_temp/gmp/lib/libgmp.a)|set(SYMENGINE_GMP_LIBRARIES ${SYMENGINE_CMAKE_DIR}/../../../../gmp/lib/libgmp.a)|' ${{ runner.temp }}/symengine/lib/cmake/symengine/SymEngineConfig.cmake
           sed -i '' 's|set(SYMENGINE_GMP_INCLUDE_DIRS /Users/runner/work/_temp/gmp/include)|set(SYMENGINE_GMP_INCLUDE_DIRS ${SYMENGINE_CMAKE_DIR}/../../../../gmp/include)|' ${{ runner.temp }}/symengine/lib/cmake/symengine/SymEngineConfig.cmake
-      - name: Archive SymEngine
-        run: tar -czf ${{ runner.temp }}/symengine-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} symengine
+      # - name: Archive SymEngine
+      #   run: tar -czf ${{ runner.temp }}/symengine-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} symengine
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
