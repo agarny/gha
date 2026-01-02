@@ -2,7 +2,7 @@ name: Library Cache Builder
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, symengine ]
   workflow_dispatch:
 
 jobs:
@@ -194,6 +194,11 @@ jobs:
       - name: Archive SymEngine (Linux/macOS/WASM)
         if: ${{ runner.os != 'Windows' }}
         run: tar -czf ${{ runner.temp }}/symengine-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} symengine
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ runner.temp }}/*.tar.gz
       - name: Release zlib, libxml2, GMP, MPFR, and SymEngine
         uses: softprops/action-gh-release@v2
         with:
