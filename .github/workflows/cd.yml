@@ -41,6 +41,7 @@ jobs:
       BUILDCACHE_COMPRESS_FORMAT: ZSTD
       BUILDCACHE_DEBUG: -1
       BUILDCACHE_LOG_FILE: ""
+      FAST_FLOAT_VERSION: 8.1.0
       GMP_VERSION: 6.3.0
       LIBXML2_VERSION: 2.9.10
       MPFR_VERSION: 4.2.2
@@ -108,15 +109,21 @@ jobs:
         run: |
           conan profile detect --force
           # Release builds.
+          conan install --requires=fast_float/${{ env.FAST_FLOAT_VERSION }} --build=missing --settings=build_type=Release --output-folder="${{ runner.temp }}\fast_float_cmake_release" -g CMakeDeps
           conan install --requires=gmp/${{ env.GMP_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\gmp_cmake_release" -g CMakeDeps
           conan install --requires=mpfr/${{ env.MPFR_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\mpfr_cmake_release" -g CMakeDeps
-          conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\symengine_cmake_release" -g CMakeDeps
-          conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_release"
+          conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Release --options symengine/*:shared=True --options symengine/*:mpfr=True --output-folder="${{ runner.temp }}\symengine_cmake_release"
+          Move-Item -Path "${{ runner.temp }}\symengine_cmake_release\build-release\conan\*" -Destination "${{ runner.temp }}\symengine_cmake_release" -Force
+          Remove-Item -Path "${{ runner.temp }}\symengine_cmake_release\build-release" -Recurse -Force
+          conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Release --options symengine/*:shared=True --options symengine/*:mpfr=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_release"
           # Debug builds.
+          conan install --requires=fast_float/${{ env.FAST_FLOAT_VERSION }} --build=missing --settings=build_type=Debug --output-folder="${{ runner.temp }}\fast_float_cmake_debug" -g CMakeDeps
           conan install --requires=gmp/${{ env.GMP_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\gmp_cmake_debug" -g CMakeDeps
           conan install --requires=mpfr/${{ env.MPFR_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\mpfr_cmake_debug" -g CMakeDeps
-          conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\symengine_cmake_debug" -g CMakeDeps
-          conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_debug"
+          conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Debug --options symengine/*:shared=True --options symengine/*:mpfr=True --output-folder="${{ runner.temp }}\symengine_cmake_debug"
+          Move-Item -Path "${{ runner.temp }}\symengine_cmake_debug\build-debug\conan\*" -Destination "${{ runner.temp }}\symengine_cmake_debug" -Force
+          Remove-Item -Path "${{ runner.temp }}\symengine_cmake_debug\build-debug" -Recurse -Force
+          conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Debug --options symengine/*:shared=True --options symengine/*:mpfr=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_debug"
           # Package GMP (release).
           New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\gmp\Release"
           Copy-Item -Recurse -Path "${{ runner.temp }}\symengine_full_deploy_release\full_deploy\host\gmp\${{ env.GMP_VERSION }}\Release\x86_64\include" -Destination "${{ runner.temp }}\gmp\Release\include"
