@@ -43,6 +43,7 @@ jobs:
       BUILDCACHE_LOG_FILE: ""
       GMP_VERSION: 6.3.0
       LIBXML2_VERSION: 2.9.10
+      MPFR_VERSION: 4.2.2
       SYMENGINE_VERSION: 0.14.0
       ZLIB_VERSION: 1.2.12
     steps:
@@ -92,16 +93,28 @@ jobs:
           ${{ matrix.emmake }} make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
           ${{ matrix.emmake }} make install
           tar -czf ${{ runner.temp }}/gmp-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} gmp
+      - name: Build and archive MPFR (Linux/macOS/WASM)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          curl -Lo mpfr.tar.xz https://www.mpfr.org/mpfr-${{ env.MPFR_VERSION }}/mpfr-${{ env.MPFR_VERSION }}.tar.xz
+          tar -xf mpfr.tar.xz
+          cd mpfr-${{ env.MPFR_VERSION }}
+          ${{ matrix.emconfigure }} ./configure --prefix=${{ runner.temp }}/mpfr --with-gmp=${{ runner.temp }}/gmp --disable-shared CFLAGS=-fPIC
+          ${{ matrix.emmake }} make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          ${{ matrix.emmake }} make install
+          tar -czf ${{ runner.temp }}/mpfr-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} mpfr
       - name: Build and archive GMP and SymEngine (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
           conan profile detect --force
           # Release builds.
           conan install --requires=gmp/${{ env.GMP_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\gmp_cmake_release" -g CMakeDeps
+          conan install --requires=mpfr/${{ env.MPFR_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\mpfr_cmake_release" -g CMakeDeps
           conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\symengine_cmake_release" -g CMakeDeps
           conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_release"
           # Debug builds.
           conan install --requires=gmp/${{ env.GMP_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\gmp_cmake_debug" -g CMakeDeps
+          conan install --requires=mpfr/${{ env.MPFR_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\mpfr_cmake_debug" -g CMakeDeps
           conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\symengine_cmake_debug" -g CMakeDeps
           conan install --requires=symengine/${{ env.SYMENGINE_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_debug"
           # Package GMP (release).
@@ -122,6 +135,24 @@ jobs:
           sed -i 's|set(gmp_LIBRARIES_DEBUG gmp::gmp)|set(gmp_LIBRARIES_DEBUG ${gmp_gmp_libgmp_LIB_DIRS_DEBUG}/gmp.lib)|' ${{ runner.temp }}/gmp/Debug/lib/cmake/gmp/gmp-Target-debug.cmake
           # Effectively package GMP.
           tar -czf "${{ runner.temp }}/gmp-${{ matrix.archive_name }}.tar.gz" -C "${{ runner.temp }}" gmp
+          # Package MPFR (release).
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\mpfr\Release"
+          Copy-Item -Recurse -Path "${{ runner.temp }}\symengine_full_deploy_release\full_deploy\host\mpfr\${{ env.MPFR_VERSION }}\Release\x86_64\include" -Destination "${{ runner.temp }}\mpfr\Release\include"
+          Copy-Item -Recurse -Path "${{ runner.temp }}\symengine_full_deploy_release\full_deploy\host\mpfr\${{ env.MPFR_VERSION }}\Release\x86_64\lib" -Destination "${{ runner.temp }}\mpfr\Release\lib"
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\mpfr\Release\lib\cmake\mpfr"
+          Copy-Item -Path "${{ runner.temp }}\mpfr_cmake_release\*.cmake" -Destination "${{ runner.temp }}\mpfr\Release\lib\cmake\mpfr"
+          sed -i 's|set(mpfr_PACKAGE_FOLDER_RELEASE ".*")|set(mpfr_PACKAGE_FOLDER_RELEASE "${CMAKE_CURRENT_LIST_DIR}/../../..")|' ${{ runner.temp }}/mpfr/Release/lib/cmake/mpfr/mpfr-release-x86_64-data.cmake
+          sed -i 's|set(mpfr_LIBRARIES_RELEASE mpfr::mpfr)|set(mpfr_LIBRARIES_RELEASE ${mpfr_mpfr_libmpfr_LIB_DIRS_RELEASE}/mpfr.lib)|' ${{ runner.temp }}/mpfr/Release/lib/cmake/mpfr/mpfr-Target-release.cmake
+          # Package MPFR (debug).
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\mpfr\Debug"
+          Copy-Item -Recurse -Path "${{ runner.temp }}\symengine_full_deploy_debug\full_deploy\host\mpfr\${{ env.MPFR_VERSION }}\Debug\x86_64\include" -Destination "${{ runner.temp }}\mpfr\Debug\include"
+          Copy-Item -Recurse -Path "${{ runner.temp }}\symengine_full_deploy_debug\full_deploy\host\mpfr\${{ env.MPFR_VERSION }}\Debug\x86_64\lib" -Destination "${{ runner.temp }}\mpfr\Debug\lib"
+          New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\mpfr\Debug\lib\cmake\mpfr"
+          Copy-Item -Path "${{ runner.temp }}\mpfr_cmake_debug\*.cmake" -Destination "${{ runner.temp }}\mpfr\Debug\lib\cmake\mpfr"
+          sed -i 's|set(mpfr_PACKAGE_FOLDER_DEBUG ".*")|set(mpfr_PACKAGE_FOLDER_DEBUG "${CMAKE_CURRENT_LIST_DIR}/../../..")|' ${{ runner.temp }}/mpfr/Debug/lib/cmake/mpfr/mpfr-debug-x86_64-data.cmake
+          sed -i 's|set(mpfr_LIBRARIES_DEBUG mpfr::mpfr)|set(mpfr_LIBRARIES_DEBUG ${mpfr_mpfr_libmpfr_LIB_DIRS_DEBUG}/mpfr.lib)|' ${{ runner.temp }}/mpfr/Debug/lib/cmake/mpfr/mpfr-Target-debug.cmake
+          # Effectively package MPFR.
+          tar -czf "${{ runner.temp }}/mpfr-${{ matrix.archive_name }}.tar.gz" -C "${{ runner.temp }}" mpfr
           # Package SymEngine (release).
           New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\symengine\Release"
           Copy-Item -Recurse -Path "${{ runner.temp }}\symengine_full_deploy_release\full_deploy\host\symengine\${{ env.SYMENGINE_VERSION }}\Release\x86_64\bin" -Destination "${{ runner.temp }}\symengine\Release\bin"
@@ -147,7 +178,7 @@ jobs:
         run: |
           git clone -b v${{ env.SYMENGINE_VERSION }} --depth 1 https://github.com/symengine/symengine.git
           cd symengine
-          ${{ matrix.emcmake }} cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ runner.temp }}/symengine -DBUILD_BENCHMARKS=OFF -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=${{ matrix.build_shared_libs }} -DGMP_INCLUDE_DIR=${{ runner.temp }}/gmp/include -DGMP_LIBRARY=${{ runner.temp }}/gmp/lib/libgmp.a -DWITH_SYMENGINE_THREAD_SAFE=OFF -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
+          ${{ matrix.emcmake }} cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ runner.temp }}/symengine -DBUILD_BENCHMARKS=OFF -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=${{ matrix.build_shared_libs }} -DGMP_INCLUDE_DIR=${{ runner.temp }}/gmp/include -DGMP_LIBRARY=${{ runner.temp }}/gmp/lib/libgmp.a -DMPFR_INCLUDE_DIR=${{ runner.temp }}/mpfr/include -DMPFR_LIBRARY=${{ runner.temp }}/mpfr/lib/libmpfr.a -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
           cmake --build build
           cmake --install build
       - name: Patch SymEngine (Linux)
@@ -163,7 +194,7 @@ jobs:
       - name: Archive SymEngine (Linux/macOS/WASM)
         if: ${{ runner.os != 'Windows' }}
         run: tar -czf ${{ runner.temp }}/symengine-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} symengine
-      - name: Release zlib, libxml2, GMP, and SymEngine
+      - name: Release zlib, libxml2, GMP, MPFR, and SymEngine
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ runner.temp }}/*.tar.gz
