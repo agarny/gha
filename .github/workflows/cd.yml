@@ -84,27 +84,7 @@ jobs:
           cmake --build build
           cmake --install build
           tar -czf ${{ runner.temp }}/libxml2-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} libxml2
-      - name: Build and archive GMP (Linux/macOS/WASM)
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          curl -Lo gmp.tar.xz https://ftp.gnu.org/gnu/gmp/gmp-${{ env.GMP_VERSION }}.tar.xz
-          tar -xf gmp.tar.xz
-          cd gmp-${{ env.GMP_VERSION }}
-          ${{ matrix.emconfigure }} ./configure --prefix=${{ runner.temp }}/gmp --enable-cxx --disable-shared --disable-assembly HOST_CC=clang CFLAGS=-fPIC
-          ${{ matrix.emmake }} make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-          ${{ matrix.emmake }} make install
-          tar -czf ${{ runner.temp }}/gmp-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} gmp
-      - name: Build and archive MPFR (Linux/macOS/WASM)
-        if: ${{ runner.os != 'Windows' }}
-        run: |
-          curl -Lo mpfr.tar.xz https://www.mpfr.org/mpfr-${{ env.MPFR_VERSION }}/mpfr-${{ env.MPFR_VERSION }}.tar.xz
-          tar -xf mpfr.tar.xz
-          cd mpfr-${{ env.MPFR_VERSION }}
-          ${{ matrix.emconfigure }} ./configure --prefix=${{ runner.temp }}/mpfr --with-gmp=${{ runner.temp }}/gmp --disable-shared CFLAGS=-fPIC
-          ${{ matrix.emmake }} make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-          ${{ matrix.emmake }} make install
-          tar -czf ${{ runner.temp }}/mpfr-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} mpfr
-      - name: Build and archive GMP and SymEngine (Windows)
+      - name: Build and archive GMP, MPFR, and SymEngine (Windows)
         if: ${{ runner.os == 'Windows' }}
         run: |
           conan profile detect --force
@@ -180,6 +160,26 @@ jobs:
           sed -i 's|set(symengine_LIBRARIES_DEBUG symengine)|set(symengine_LIBRARIES_DEBUG ${symengine_LIB_DIRS_DEBUG}/symengine.lib)|' ${{ runner.temp }}/symengine/Debug/lib/cmake/symengine/symengine-Target-debug.cmake
           # Effectively package SymEngine.
           tar -czf "${{ runner.temp }}/symengine-${{ matrix.archive_name }}.tar.gz" -C "${{ runner.temp }}" symengine
+      - name: Build and archive GMP (Linux/macOS/WASM)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          curl -Lo gmp.tar.xz https://ftp.gnu.org/gnu/gmp/gmp-${{ env.GMP_VERSION }}.tar.xz
+          tar -xf gmp.tar.xz
+          cd gmp-${{ env.GMP_VERSION }}
+          ${{ matrix.emconfigure }} ./configure --prefix=${{ runner.temp }}/gmp --enable-cxx --disable-shared --disable-assembly HOST_CC=clang CFLAGS=-fPIC
+          ${{ matrix.emmake }} make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          ${{ matrix.emmake }} make install
+          tar -czf ${{ runner.temp }}/gmp-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} gmp
+      - name: Build and archive MPFR (Linux/macOS/WASM)
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          curl -Lo mpfr.tar.xz https://www.mpfr.org/mpfr-${{ env.MPFR_VERSION }}/mpfr-${{ env.MPFR_VERSION }}.tar.xz
+          tar -xf mpfr.tar.xz
+          cd mpfr-${{ env.MPFR_VERSION }}
+          ${{ matrix.emconfigure }} ./configure --prefix=${{ runner.temp }}/mpfr --with-gmp=${{ runner.temp }}/gmp --disable-shared CFLAGS=-fPIC
+          ${{ matrix.emmake }} make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+          ${{ matrix.emmake }} make install
+          tar -czf ${{ runner.temp }}/mpfr-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }} mpfr
       - name: Build and archive SymEngine (Linux/macOS/WASM)
         if: ${{ runner.os != 'Windows' }}
         run: |
