@@ -2,7 +2,8 @@ name: Library Cache Builder
 
 on:
   push:
-    branches: [ main, symengine ]
+    # branches: [ main, symengine ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
