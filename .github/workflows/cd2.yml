@@ -34,7 +34,7 @@ jobs:
 
       - name: Install dependencies with vcpkg
         run: |
-          ./vcpkg/vcpkg install gmp:x64-windows mpfr:x64-windows
+          .\vcpkg\vcpkg.exe install gmp:x64-windows mpfr:x64-windows
         shell: cmd
 
       - name: Cache SymEngine build
