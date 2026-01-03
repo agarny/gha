@@ -11,27 +11,31 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
-    env:
-      VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          cd vcpkg
+          ./bootstrap-vcpkg.bat
+        shell: cmd
 
-      - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v7
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
         with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+          path: |
+            vcpkg/installed
+            vcpkg/packages
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}-gmp-mpfr
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
 
       - name: Install dependencies with vcpkg
         run: |
-          vcpkg install gmp:x64-windows mpfr:x64-windows
-        shell: bash
+          ./vcpkg/vcpkg install gmp:x64-windows mpfr:x64-windows
+        shell: cmd
 
       - name: Cache SymEngine build
         uses: actions/cache@v4
@@ -44,22 +48,22 @@ jobs:
 
       - name: Configure SymEngine
         run: |
-          cmake -B build -S . \
-            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DWITH_GMP=ON \
-            -DWITH_MPFR=ON \
-            -DBUILD_TESTS=OFF \
+          cmake -B build -S . ^
+            -DCMAKE_TOOLCHAIN_FILE="%GITHUB_WORKSPACE%\vcpkg\scripts\buildsystems\vcpkg.cmake" ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DWITH_GMP=ON ^
+            -DWITH_MPFR=ON ^
+            -DBUILD_TESTS=OFF ^
             -DBUILD_BENCHMARKS=OFF
-        shell: bash
+        shell: cmd
 
       - name: Build SymEngine
         run: cmake --build build --config Release --parallel
-        shell: bash
+        shell: cmd
 
       - name: Test SymEngine (optional)
         run: |
           cd build
           ctest -C Release --output-on-failure
-        shell: bash
+        shell: cmd
         continue-on-error: true
