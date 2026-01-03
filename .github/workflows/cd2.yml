@@ -15,6 +15,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check repository structure
+        run: dir
+        shell: cmd
+
       - name: Setup vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git
