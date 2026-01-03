@@ -90,21 +90,13 @@ jobs:
           # Install Vcpkg.
           git clone https://github.com/microsoft/vcpkg.git
           .\vcpkg\bootstrap-vcpkg.bat
-          # Install GMP and MPFR.
-          .\vcpkg\vcpkg.exe install gmp mpfr --triplet x64-windows
-          # Clone SymEngine.
-          git clone -b v${{ env.SYMENGINE_VERSION }} --depth 1 https://github.com/symengine/symengine.git
-          cd symengine
-          # Release builds.
-          cmake -G Ninja -S . -B build_release -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ runner.temp }}\symengine\Release -DBUILD_BENCHMARKS=OFF -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON
-          cmake --build build_release
-          cmake --install build_release
-          # Debug builds.
-          cmake -G Ninja -S . -B build_debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{ runner.temp }}\symengine\Debug -DBUILD_BENCHMARKS=OFF -DBUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON
-          cmake --build build_debug
-          cmake --install build_debug
-          cd ..
+          # Install the release and debug versions of SymEngine, as well as its dependencies on GMP and MPFR.
+          .\vcpkg\vcpkg.exe install symengine[mpfr] --triplet x64-windows
+          .\vcpkg\vcpkg.exe install symengine[mpfr] --triplet x64-windows --debug
           # Package SymEngine.
+          mkdir ${{ runner.temp }}\symengine
+          cp -r .\vcpkg\installed\x64-windows ${{ runner.temp }}\symengine\Release
+          cp -r .\vcpkg\installed\x64-windows-dbg ${{ runner.temp }}\symengine\Debug
           tar -czf ${{ runner.temp }}/symengine-${{ matrix.archive_name }}.tar.gz -C ${{ runner.temp }}/symengine Release Debug
       # - name: Build and archive GMP, MPFR, and SymEngine (Windows)
       #   if: ${{ runner.os == 'Windows' }}
