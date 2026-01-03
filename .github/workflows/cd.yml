@@ -93,16 +93,16 @@ jobs:
           conan install --requires=gmp/${{ env.GMP_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\gmp_cmake_release" -g CMakeDeps
           conan install --requires=mpfr/${{ env.MPFR_VERSION }} --build=missing --settings=build_type=Release --options symengine/*:shared=True --output-folder="${{ runner.temp }}\mpfr_cmake_release" -g CMakeDeps
           conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Release --options symengine/*:shared=True --options symengine/*:mpfr=True --output-folder="${{ runner.temp }}\symengine_cmake_release"
-          Move-Item -Path "${{ runner.temp }}\symengine_cmake_release\build-release\conan\*" -Destination "${{ runner.temp }}\symengine_cmake_release" -Force
-          Remove-Item -Path "${{ runner.temp }}\symengine_cmake_release\build-release" -Recurse -Force
+          # Move-Item -Path "${{ runner.temp }}\symengine_cmake_release\build-release\conan\*" -Destination "${{ runner.temp }}\symengine_cmake_release" -Force
+          # Remove-Item -Path "${{ runner.temp }}\symengine_cmake_release\build-release" -Recurse -Force
           conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Release --options symengine/*:shared=True --options symengine/*:mpfr=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_release"
           # Debug builds.
           conan install --requires=fast_float/${{ env.FAST_FLOAT_VERSION }} --build=missing --settings=build_type=Debug --output-folder="${{ runner.temp }}\fast_float_cmake_debug" -g CMakeDeps
           conan install --requires=gmp/${{ env.GMP_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\gmp_cmake_debug" -g CMakeDeps
           conan install --requires=mpfr/${{ env.MPFR_VERSION }} --build=missing --settings=build_type=Debug --options symengine/*:shared=True --output-folder="${{ runner.temp }}\mpfr_cmake_debug" -g CMakeDeps
           conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Debug --options symengine/*:shared=True --options symengine/*:mpfr=True --output-folder="${{ runner.temp }}\symengine_cmake_debug"
-          Move-Item -Path "${{ runner.temp }}\symengine_cmake_debug\build-debug\conan\*" -Destination "${{ runner.temp }}\symengine_cmake_debug" -Force
-          Remove-Item -Path "${{ runner.temp }}\symengine_cmake_debug\build-debug" -Recurse -Force
+          # Move-Item -Path "${{ runner.temp }}\symengine_cmake_debug\build-debug\conan\*" -Destination "${{ runner.temp }}\symengine_cmake_debug" -Force
+          # Remove-Item -Path "${{ runner.temp }}\symengine_cmake_debug\build-debug" -Recurse -Force
           conan install "${{ github.workspace }}/conan-symengine" --build=missing --settings=build_type=Debug --options symengine/*:shared=True --options symengine/*:mpfr=True --deployer=full_deploy --deployer-folder="${{ runner.temp }}\symengine_full_deploy_debug"
           # Package GMP (release).
           New-Item -ItemType Directory -Force -Path "${{ runner.temp }}\gmp\Release"
