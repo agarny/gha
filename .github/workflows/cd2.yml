@@ -86,7 +86,7 @@ jobs:
           copy build\symengine\Release\symengine-0.14.dll build\symengine\tests\rcp\Release\
           copy build\symengine\Release\symengine-0.14.dll build\symengine\utilities\matchpycpp\autogen_tests\Release\
           copy build\symengine\Release\symengine-0.14.dll build\symengine\utilities\matchpycpp\Tests\bipartite\Release\
-          copy build\symengine\Release\symengine-0.14.dll build\symengine\utilities\matchpycpp\Tests hopcroft_karp\release\
+          copy build\symengine\Release\symengine-0.14.dll "build\symengine\utilities\matchpycpp\Tests hopcroft_karp\release\"
         shell: cmd
 
       - name: Test SymEngine
