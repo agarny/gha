@@ -15,9 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check repository structure
-        run: dir
+      - name: Clone SymEngine
+        run: |
+          git clone https://github.com/symengine/symengine.git symengine-src
         shell: cmd
+
+      - name: Check repository structure
 
       - name: Setup vcpkg
         run: |
@@ -51,7 +54,7 @@ jobs:
 
       - name: Configure SymEngine
         run: |
-          cmake -B build -S . ^
+          cmake -B build -S symengine-src ^
             -DCMAKE_TOOLCHAIN_FILE="%GITHUB_WORKSPACE%\vcpkg\scripts\buildsystems\vcpkg.cmake" ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DWITH_GMP=ON ^
