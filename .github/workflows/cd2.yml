@@ -66,14 +66,32 @@ jobs:
         run: cmake --build build --config Release --parallel
         shell: cmd
 
+      - name: Check repository structure
+        run: |
+          ls -ahlR
+        shell: bash
+
+      - name: Copy the DLL from ./build/symengine/Release to ./build/symengine/tests/basic/Release, ./build/symengine/tests/cwrapper/Release, ./build/symengine/tests/eval/Release, ./build/symengine/tests/expression/Release, ./build/symengine/tests/finitediff/Release, ./build/symengine/tests/logic/Release, ./build/symengine/tests/matrix/Release, ./build/symengine/tests/ntheory/Release, ./build/symengine/tests/polynomial/Release, ./build/symengine/tests/printing/Release, ./build/symengine/tests/rcp/Release, ./build/symengine/utilities/matchpycpp/autogen_tests/Release, ./build/symengine/utilities/matchpycpp/tests/bipartite/Release, ./build/symengine/utilities/matchpycpp/tests/hopcroft_karp/release
+        run: |
+          copy build\symengine\Release\symengine.dll build\symengine\tests\basic\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\cwrapper\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\eval\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\expression\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\finitediff\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\logic\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\matrix\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\ntheory\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\polynomial\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\printing\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\tests\rcp\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\utilities\matchpycpp\autogen_tests\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\utilities\matchpycpp\Tests\bipartite\Release\
+          copy build\symengine\Release\symengine.dll build\symengine\utilities\matchpycpp\Tests hopcroft_karp\release\
+        shell: cmd
+
       - name: Test SymEngine
         run: |
           cd build
           ctest -C Release --output-on-failure
         shell: cmd
         continue-on-error: true
-
-      - name: Check repository structure
-        run: |
-          ls -ahlR
-        shell: bash
