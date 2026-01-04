@@ -65,9 +65,14 @@ jobs:
         run: cmake --build build --config Release --parallel
         shell: cmd
 
-      - name: Test SymEngine (optional)
+      - name: Test SymEngine
         run: |
           cd build
           ctest -C Release --output-on-failure
         shell: cmd
         continue-on-error: true
+
+      - name: Check repository structure
+        run: |
+          tree /F
+        shell: cmd
